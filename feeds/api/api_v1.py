@@ -127,7 +127,8 @@ def add_notification():
         params.get('actor'),
         params.get('verb'),
         params.get('object'),
-        params.get('source'),
+        # params.get('source'),
+        service,
         params.get('level'),
         target=params.get('target', []),
         context=params.get('context'),
@@ -345,7 +346,7 @@ def _get_notification_params(params, is_global=False):
         raise IllegalParameterError('Expected a JSON object as an input.')
     required_list = ['verb', 'object', 'level']
     if not is_global:
-        required_list = required_list + ['actor', 'target', 'source']
+        required_list = required_list + ['actor', 'target']
     missing = [r for r in required_list if r not in params]
     if missing:
         raise MissingParameterError("Missing parameter{} - {}".format(
