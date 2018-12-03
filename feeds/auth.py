@@ -53,7 +53,11 @@ def validate_service_token(token):
     """
     token = __fetch_token(token)
     if token.get('type') == 'Service':
-        return token.get('name')
+        service = config.uid_to_service.get(token.get('user'))
+        if service is None:
+            raise InvalidTokenError("Authentication token does not come from a known service.")
+        else:
+            return service
     else:
         raise InvalidTokenError("Authentication token must be a Service token.")
 

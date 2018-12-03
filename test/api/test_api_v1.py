@@ -88,7 +88,7 @@ def test_post_notification_ok(client, mock_valid_service_token, mock_valid_user_
     test_actor = "test_actor"
     mock_valid_user(test_actor, "Test Actor")
     mock_valid_user(test_user, "Test User")
-    mock_valid_service_token("user", "pw", service)
+    mock_valid_service_token("service_admin", "pw", service)
     note = {
         "actor": test_actor,
         "target": [test_user],
@@ -447,7 +447,7 @@ def test_expire_notifications_admin(client, mongo_notes, mock_valid_admin_token)
 def test_expire_notifications_service(client, mongo_notes, mock_valid_service_token, mock_valid_user):
     service = "my_service"
     mock_valid_user("kbasetest", "KBase Test")
-    mock_valid_service_token("kbase_admin", "KBase Admin", service)
+    mock_valid_service_token("service_admin", "KBase Admin", service)
     service_cred = {"Authorization": "token-"+str(uuid4())}
     ext_key = "an_external_key"
     # make a notification
@@ -518,7 +518,7 @@ def test_expire_notifications_service(client, mongo_notes, mock_valid_service_to
     ("foo!", 400, 'Expected a JSON object as an input.')
 ])
 def test_expire_notifications_bad_inputs(client, mock_valid_service_token, inputs, code, msg):
-    mock_valid_service_token('user', 'name', 'service')
+    mock_valid_service_token('service_admin', 'name', 'service')
     header = {"Authorization": "token-"+str(uuid4())}
     response = client.post('/api/V1/notifications/expire', headers=header, json=inputs)
     assert response.status_code == code

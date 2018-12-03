@@ -120,7 +120,7 @@ def mock_valid_service_token(requests_mock):
         requests_mock.get('{}/api/V2/token'.format(auth_url), json={
             'user': user_id,
             'type': 'Service',
-            'name': service_name
+            'name': service_name  # only really in the config, but that's ok for now.
         })
         requests_mock.get('{}/api/V2/me'.format(auth_url), json={
             'customroles': [],

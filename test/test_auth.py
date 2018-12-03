@@ -19,9 +19,10 @@ def test_validate_service_token_ok(requests_mock):
 
     # test service token
     token = 'fake_token' + str(uuid.uuid4())
-    test_name = 'test_name'
+    test_name = 'fake_service'
+    user = 'service_admin'
     requests_mock.get('{}/api/V2/token'.format(cfg.get('feeds', 'auth-url')),
-                      text=json.dumps({'type': 'Service', 'name': test_name}))
+                      text=json.dumps({'type': 'Service', 'user': user}))
     requests_mock.get('{}/api/V2/me'.format(cfg.get('feeds', 'auth-url')),
                       text=json.dumps({}))
     assert (validate_service_token(token) == test_name)

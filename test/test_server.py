@@ -75,8 +75,8 @@ def test_permissions_user(client, requests_mock, mock_valid_user_token):
 
 
 def test_permissions_service(client, requests_mock, mock_valid_service_token):
-    service_name = 'SomeService'
-    user_id = 'service_user'
+    service_name = 'fake_service'
+    user_id = 'service_admin'
     user_name = 'Service User'
     mock_valid_service_token(user_id, user_name, service_name)
     response = client.get('/permissions', headers={'Authorization': 'serv_token-'+str(uuid4())})
@@ -118,7 +118,7 @@ def test_permissions_bad_token(client, mock_invalid_user_token):
 
 
 def test_server_illegal_param(client, mock_valid_service_token):
-    mock_valid_service_token('serv_user', 'serv_pw', 'SomeService')
+    mock_valid_service_token('service_admin', 'serv_pw', 'SomeService')
     response = client.post('/api/V1/notification', headers={'Authorization': 'token-'+str(uuid4())}, json=['bad', 'format'])
     data = json.loads(response.data)
     _validate_error(data, {'http_code': 400, 'http_status': 'Bad Request', 'message': 'Expected a JSON object as an input.'})
@@ -153,7 +153,7 @@ def test_server_missing_params(client, mock_valid_service_token):
     Calls the API, but here we're just checking that the proper error gets raised from the server.
     The API tests will make sure the error content is correct.
     """
-    mock_valid_service_token('serv_user', 'serv_pw', 'SomeService')
+    mock_valid_service_token('service_admin', 'serv_pw', 'SomeService')
     response = client.post('/api/V1/notification', headers={'Authorization': 'token-'+str(uuid4())}, json={'actor': 'nope'})
     data = json.loads(response.data)
     _validate_error(data, {
