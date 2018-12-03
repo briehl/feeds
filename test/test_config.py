@@ -20,7 +20,12 @@ GOOD_CONFIG = [
     'workspace-url=ws',
     'groups-url=groups',
     'global-feed=global',
-    'lifespan=30'
+    'lifespan=30',
+    '[services]',
+    'groups=foo',
+    'workspace=bar',
+    'narrative=baz',
+    'jobs=foobar'
 ]
 
 @pytest.fixture(scope="function")
@@ -74,7 +79,7 @@ def test_config_bad_lifespan(dummy_config, dummy_auth_token):
 
 def test_config_check_debug(dummy_config, dummy_auth_token):
     cfg_text = GOOD_CONFIG.copy()
-    cfg_text.append("debug=true")
+    cfg_text.insert(1, "debug=true")
     cfg_path = dummy_config(cfg_text)
     feeds_config_backup = os.environ.get('FEEDS_CONFIG')
     os.environ['FEEDS_CONFIG'] = cfg_path
@@ -108,6 +113,7 @@ def test_config_from_env_ok(dummy_config, dummy_auth_token):
         os.environ['KB_DEPLOYMENT_CONFIG'] = path_backup
     if feeds_config_backup is not None:
         os.environ['FEEDS_CONFIG'] = feeds_config_backup
+    config.__config = None
 
 
 def test_config_from_env_errors(dummy_config, dummy_auth_token):
@@ -122,6 +128,7 @@ def test_config_from_env_errors(dummy_config, dummy_auth_token):
     with pytest.raises(ConfigError) as e:
         config.FeedsConfig()
     assert "Error parsing config file: section feeds not found!" in str(e.value)
+    config.__config = None
     del os.environ['FEEDS_CONFIG']
     if path_backup is not None:
         os.environ['FEEDS_CONFIG'] = path_backup
@@ -134,6 +141,7 @@ def test_config_from_env_no_auth():
     with pytest.raises(RuntimeError) as e:
         config.FeedsConfig()
     assert "The AUTH_TOKEN environment variable must be set!" in str(e.value)
+    config.__config = None
     if backup_token is not None:
         os.environ['AUTH_TOKEN'] = backup_token
 
@@ -221,7 +229,9 @@ def test_config_missing_reqs(dummy_config, dummy_auth_token):
     path_backup = os.environ.get('FEEDS_CONFIG')
     bad_cfg_1 = [
         "[feeds]",
-        "db-engine=mongodb"
+        "db-engine=mongodb",
+        "[services]",
+        "groups=foo"
     ]
     cfg_path = dummy_config(bad_cfg_1)
     os.environ['FEEDS_CONFIG'] = cfg_path
@@ -232,13 +242,49 @@ def test_config_missing_reqs(dummy_config, dummy_auth_token):
 
     bad_cfg_2 = [
         "[feeds]",
-        "db-engine="
+        "db-engine=",
+        "[services]",
+        "groups=foo"
     ]
     cfg_path2 = dummy_config(bad_cfg_2)
     os.environ['FEEDS_CONFIG'] = cfg_path2
+    config.__config = None
     with pytest.raises(ConfigError) as e:
         config.FeedsConfig()
     assert "has no value!" in str(e.value)
+
+    bad_cfg_3 = [
+        "[feeds]",
+        "db-engine=mongodb"
+    ]
+    cfg_path3 = dummy_config(bad_cfg_3)
+    os.environ['FEEDS_CONFIG'] = cfg_path3
+    config.__config = None
+    with pytest.raises(ConfigError) as e:
+        config.FeedsConfig()
+    assert "Error parsing config file: section services not found!" in str(e.value)
+
+    bad_cfg_4 = [
+        "[feeds]",
+        'db-engine=redis',
+        'db-host=foo',
+        'db-port=5',
+        'auth-url=baz',
+        'njs-url=njs',
+        'workspace-url=ws',
+        'groups-url=groups',
+        'global-feed=global',
+        'lifespan=30',
+        '[services]'
+    ]
+    cfg_path4 = dummy_config(bad_cfg_4)
+    os.environ['FEEDS_CONFIG'] = cfg_path4
+    config.__config = None
+    with pytest.raises(ConfigError) as e:
+        config.FeedsConfig()
+    assert "Error parsing config file: services section is empty!" in str(e.value)
+
+    config.__config = None
 
     if path_backup is not None:
         os.environ['FEEDS_CONFIG'] = path_backup

@@ -7,8 +7,10 @@ ENV_CONFIG_PATH = "FEEDS_CONFIG"
 ENV_CONFIG_BACKUP = "KB_DEPLOYMENT_CONFIG"
 ENV_AUTH_TOKEN = "AUTH_TOKEN"
 
-INI_SECTION = "feeds"
+FEEDS_SECTION = "feeds"
+SERVICE_SECTION = "services"
 
+# feeds keys
 KEY_DB_HOST = "db-host"
 KEY_DB_PORT = "db-port"
 KEY_DB_USER = "db-user"
@@ -37,35 +39,49 @@ class FeedsConfig(object):
             raise RuntimeError("The AUTH_TOKEN environment variable must be set!")
         config_file = self._find_config_path()
         cfg = self._load_config(config_file)
-        if not cfg.has_section(INI_SECTION):
-            raise ConfigError(
-                "Error parsing config file: section {} not found!".format(INI_SECTION)
-            )
-        self.db_engine = self._get_line(cfg, KEY_DB_ENGINE)
-        self.db_host = self._get_line(cfg, KEY_DB_HOST)
-        self.db_port = self._get_line(cfg, KEY_DB_PORT)
+        for s in [FEEDS_SECTION, SERVICE_SECTION]:
+            if not cfg.has_section(s):
+                raise ConfigError(
+                    "Error parsing config file: section {} not found!".format(s)
+                )
+
+        self._load_feeds_section(cfg)
+        self._load_services_section(cfg)
+
+    def _load_feeds_section(self, cfg):
+        self.db_engine = self._get_line(cfg, FEEDS_SECTION, KEY_DB_ENGINE)
+        self.db_host = self._get_line(cfg, FEEDS_SECTION, KEY_DB_HOST)
+        self.db_port = self._get_line(cfg, FEEDS_SECTION, KEY_DB_PORT)
         try:
             self.db_port = int(self.db_port)
         except ValueError:
             raise ConfigError("{} must be an int! Got {}".format(KEY_DB_PORT, self.db_port))
-        self.db_user = self._get_line(cfg, KEY_DB_USER, required=False)
-        self.db_pw = self._get_line(cfg, KEY_DB_PW, required=False)
-        self.db_name = self._get_line(cfg, KEY_DB_NAME, required=False)
-        self.global_feed = self._get_line(cfg, KEY_GLOBAL_FEED)
-        self.lifespan = self._get_line(cfg, KEY_LIFESPAN)
+        self.db_user = self._get_line(cfg, FEEDS_SECTION, KEY_DB_USER, required=False)
+        self.db_pw = self._get_line(cfg, FEEDS_SECTION, KEY_DB_PW, required=False)
+        self.db_name = self._get_line(cfg, FEEDS_SECTION, KEY_DB_NAME, required=False)
+        self.global_feed = self._get_line(cfg, FEEDS_SECTION, KEY_GLOBAL_FEED)
+        self.lifespan = self._get_line(cfg, FEEDS_SECTION, KEY_LIFESPAN)
         try:
-            self.lifespan = int(self._get_line(cfg, KEY_LIFESPAN))
+            self.lifespan = int(self._get_line(cfg, FEEDS_SECTION, KEY_LIFESPAN))
         except ValueError:
             raise ConfigError("{} must be an int! Got {}".format(KEY_LIFESPAN, self.lifespan))
-        self.debug = self._get_line(cfg, KEY_DEBUG, required=False)
+        self.debug = self._get_line(cfg, FEEDS_SECTION, KEY_DEBUG, required=False)
         if not self.debug or self.debug.lower() != "true":
             self.debug = False
         else:
             self.debug = True
-        self.auth_url = self._get_line(cfg, KEY_AUTH_URL)
-        self.njs_url = self._get_line(cfg, KEY_NJS_URL)
-        self.ws_url = self._get_line(cfg, KEY_WS_URL)
-        self.groups_url = self._get_line(cfg, KEY_GROUPS_URL)
+        self.auth_url = self._get_line(cfg, FEEDS_SECTION, KEY_AUTH_URL)
+        self.njs_url = self._get_line(cfg, FEEDS_SECTION, KEY_NJS_URL)
+        self.ws_url = self._get_line(cfg, FEEDS_SECTION, KEY_WS_URL)
+        self.groups_url = self._get_line(cfg, FEEDS_SECTION, KEY_GROUPS_URL)
+
+    def _load_services_section(self, cfg):
+        self.uid_to_service = dict()
+        serv_to_id = dict(cfg[SERVICE_SECTION])
+        if len(serv_to_id) == 0:
+            raise ConfigError("Error parsing config file: services section is empty!")
+        for k in serv_to_id:
+            self.uid_to_service[serv_to_id[k]] = k
 
     def _find_config_path(self):
         """
@@ -99,13 +115,13 @@ class FeedsConfig(object):
                 raise ConfigError("Error parsing config file {}: {}".format(cfg_file, e))
         return config
 
-    def _get_line(self, config, key, required=True):
+    def _get_line(self, config, section, key, required=True):
         """
         A little wrapper that raises a ConfigError if a required key isn't present.
         """
         val = None
         try:
-            val = config.get(INI_SECTION, key)
+            val = config.get(section, key)
         except configparser.NoOptionError:
             if required:
                 raise ConfigError("Required option {} not found in config".format(key))
