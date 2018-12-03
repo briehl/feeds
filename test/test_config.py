@@ -99,6 +99,12 @@ def test_config_from_env_ok(dummy_config, dummy_auth_token):
     assert cfg.db_host == 'foo'
     assert cfg.db_port == 5
     assert cfg.debug == False
+    assert cfg.uid_to_service == {
+        "foo": "groups",
+        "bar": "workspace",
+        "baz": "narrative",
+        "foobar": "jobs"
+    }
     del os.environ['FEEDS_CONFIG']
 
     kb_dep_config = os.environ.get('KB_DEPLOYMENT_CONFIG')
@@ -108,13 +114,18 @@ def test_config_from_env_ok(dummy_config, dummy_auth_token):
     assert cfg.db_host == 'foo'
     assert cfg.db_port == 5
     assert cfg.debug == False
+    assert cfg.uid_to_service == {
+        "foo": "groups",
+        "bar": "workspace",
+        "baz": "narrative",
+        "foobar": "jobs"
+    }
     del os.environ['KB_DEPLOYMENT_CONFIG']
     if kb_dep_config is not None:
         os.environ['KB_DEPLOYMENT_CONFIG'] = path_backup
     if feeds_config_backup is not None:
         os.environ['FEEDS_CONFIG'] = feeds_config_backup
     config.__config = None
-
 
 def test_config_from_env_errors(dummy_config, dummy_auth_token):
     cfg_lines = [
